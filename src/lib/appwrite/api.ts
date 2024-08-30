@@ -1,6 +1,8 @@
 import {ID, Query} from 'appwrite';
+import { Client, Storage, ImageGravity, ImageFormat } from "appwrite";
 import { INewUser , IUpdatePost, INewPost, IUpdateUser} from "../../types";
-import { account, appwriteConfig, avatars, databases } from './config';
+import { account, appwriteConfig, avatars, databases, storage } from './config';
+import exp from 'constants';
 
     export async function createUserAccount(user: INewUser) {
         try{
@@ -83,5 +85,50 @@ import { account, appwriteConfig, avatars, databases } from './config';
             return session;
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    export async function createPost(post: INewPost) {
+        try {
+             const uploadedFile = await uploadFile(post.file[0])
+
+             if(!uploadedFile) throw Error;
+
+             const fileUr = getFilePreview(uploadedFile.$id);
+             if(!fileUr) throw Error;
+           
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    export async function uploadFile(file: File) {
+        try {
+            const uploadedFile = await storage.createFile(
+                appwriteConfig.storageId,
+                ID.unique(),
+                file
+            );
+
+            return uploadedFile;
+        } catch (error) {
+            console.log(error);
+        }
+
+    }
+    export async function getFilePreview(fileId: string) {
+        try {
+         const fileUrl = storage.getFilePreview(
+            appwriteConfig.storageId,
+            fileId,
+            2000,
+            2000,
+            // CHheckout image gravity peramiters
+            ImageGravity.Top,
+            100,
+         )
+            return fileUrl;  
+        } catch (error) {
+            console.log(error);
         }
     }

@@ -1,40 +1,51 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "../ui/textarea"
 import FileUplaoder from "../shared/FileUplaoder"
+import { PostValidation } from "@/lib/validation"
+import { Models } from "appwrite"
+import { useCreatePost } from "@/lib/react-query/queriesAndMutations"
+import { useUserContext } from "@/context/AuthContext"
+import { toast } from "../ui/use-toast"
 
-const formSchema = z.object({
-    username: z.string().min(2, {
-        message: "Username must be at least 2 characters.",
-    }),
-})
+type PostFormProps = {
+    post?: Models.Document;
+}
 
-const PostForm = ({ post }) => {
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+const PostForm = ({ post }: PostFormProps) => {
+    const {mutateAsync: createPost, isPending, isLoadingCreate} = useCreatePost();
+    const {user} = useUserContext();
+    const navigate = useNavigate();
+
+    const form = useForm<z.infer<typeof PostValidation>>({
+        resolver: zodResolver(PostValidation),
         defaultValues: {
-            username: "",
+            caption: post ? post?.caption : "",
+            file: [],
+            location: post ? post?.location : "",
+            tags: post ? post?.tags.join : ""
         },
     })
 
     // 2. Define a submit handler.
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        // Do something with the form values.
-        // ✅ This will be type-safe and validated.
-        console.log(values)
+    async function onSubmit(values: z.infer<typeof PostValidation>) {
+        const newPost = await createPost({
+            ...values,
+            userId: user.id
+        })
+        if(!newPost) {
+            toast({
+                title: 'Please try again'
+            })
+        }
+        navigate('/');
+
+        
     }
 
     return (
@@ -76,7 +87,7 @@ const PostForm = ({ post }) => {
                         <FormItem>
                             <FormLabel className="shad-form_label">Add Location</FormLabel>
                             <FormControl>
-                                <Input type="text" className="shad-input" />
+                                <Input type="text" className="shad-input" {...field} />
                             </FormControl>
                             <FormMessage className="shad-form_message" />
                         </FormItem>
@@ -93,6 +104,7 @@ const PostForm = ({ post }) => {
                                     type="text"
                                     className="shad-input"
                                     placeholder="Art, Experssion, Learn"
+                                    {...field}
                                 />
                             </FormControl>
                             <FormMessage className="shad-form_message" />
