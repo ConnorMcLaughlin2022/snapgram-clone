@@ -18,3 +18,6 @@ export function timeAgo(isoDateString: string): string {
       return `${daysDiff} days ago`;
   }
 }
+export const checkIsLiked = (likeList: string[], userId: string) => {
+  return likeList.includes(userId);
+};
